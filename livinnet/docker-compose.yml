@@ -1,0 +1,267 @@
+services:
+  netbox: &netbox
+    # Imagen oficial + branding Livinnet (ver ./Dockerfile y ./branding).
+    # Para actualizar NetBox: cambiar NETBOX_VERSION y redesplegar (Dokploy reconstruye).
+    image: livinnet/netbox:${NETBOX_VERSION:-v4.7-5.1.1}-brand
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NETBOX_VERSION: "${NETBOX_VERSION:-v4.7-5.1.1}"
+    restart: unless-stopped
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      redis-cache:
+        condition: service_healthy
+
+    user: "netbox:root"
+
+    environment:
+      # =====================================================
+      # NETBOX
+      # =====================================================
+      ALLOWED_HOSTS: "${ALLOWED_HOSTS:-10.250.254.43 localhost}"
+      CSRF_TRUSTED_ORIGINS: "${CSRF_TRUSTED_ORIGINS:-http://10.250.254.43:18080}"
+      TIME_ZONE: "${TIME_ZONE:-America/Guayaquil}"
+
+      SECRET_KEY: "${SECRET_KEY}"
+      API_TOKEN_PEPPER_1: "${API_TOKEN_PEPPER_1}"
+
+      DEBUG: "${DEBUG:-false}"
+      LOGIN_REQUIRED: "${LOGIN_REQUIRED:-true}"
+
+      # =====================================================
+      # POSTGRESQL
+      # =====================================================
+      DB_HOST: "${DB_HOST:-postgres}"
+      DB_PORT: "${DB_PORT:-5432}"
+      DB_NAME: "${POSTGRES_DB:-netbox}"
+      DB_USER: "${POSTGRES_USER:-netbox}"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
+
+      DB_SSLMODE: "${DB_SSLMODE:-prefer}"
+      DB_CONN_MAX_AGE: "${DB_CONN_MAX_AGE:-300}"
+      DB_DISABLE_SERVER_SIDE_CURSORS: "${DB_DISABLE_SERVER_SIDE_CURSORS:-false}"
+
+      # =====================================================
+      # VALKEY / REDIS TASKS
+      # =====================================================
+      REDIS_HOST: "${REDIS_HOST:-redis}"
+      REDIS_PORT: "${REDIS_PORT:-6379}"
+      REDIS_DATABASE: "${REDIS_DATABASE:-0}"
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+      REDIS_SSL: "${REDIS_SSL:-false}"
+      REDIS_INSECURE_SKIP_TLS_VERIFY: "${REDIS_INSECURE_SKIP_TLS_VERIFY:-false}"
+
+      # =====================================================
+      # VALKEY / REDIS CACHE
+      # =====================================================
+      REDIS_CACHE_HOST: "${REDIS_CACHE_HOST:-redis-cache}"
+      REDIS_CACHE_PORT: "${REDIS_CACHE_PORT:-6379}"
+      REDIS_CACHE_DATABASE: "${REDIS_CACHE_DATABASE:-1}"
+      REDIS_CACHE_PASSWORD: "${REDIS_CACHE_PASSWORD}"
+      REDIS_CACHE_SSL: "${REDIS_CACHE_SSL:-false}"
+      REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY: "${REDIS_CACHE_INSECURE_SKIP_TLS_VERIFY:-false}"
+
+      # =====================================================
+      # FEATURES
+      # =====================================================
+      GRAPHQL_ENABLED: "${GRAPHQL_ENABLED:-true}"
+      WEBHOOKS_ENABLED: "${WEBHOOKS_ENABLED:-true}"
+      METRICS_ENABLED: "${METRICS_ENABLED:-false}"
+
+      CORS_ORIGIN_ALLOW_ALL: "${CORS_ORIGIN_ALLOW_ALL:-false}"
+      CORS_ORIGIN_WHITELIST: "${CORS_ORIGIN_WHITELIST:-http://10.250.254.43:18080}"
+
+      RELEASE_CHECK_URL: "${RELEASE_CHECK_URL:-https://api.github.com/repos/netbox-community/netbox/releases}"
+
+      # =====================================================
+      # STORAGE
+      # =====================================================
+      MEDIA_ROOT: "${MEDIA_ROOT:-/opt/netbox/netbox/media}"
+
+      # =====================================================
+      # EMAIL
+      # =====================================================
+      EMAIL_FROM: "${EMAIL_FROM:-netbox@example.com}"
+      EMAIL_SERVER: "${EMAIL_SERVER:-localhost}"
+      EMAIL_PORT: "${EMAIL_PORT:-25}"
+      EMAIL_USERNAME: "${EMAIL_USERNAME:-}"
+      EMAIL_PASSWORD: "${EMAIL_PASSWORD:-}"
+      EMAIL_TIMEOUT: "${EMAIL_TIMEOUT:-5}"
+      EMAIL_USE_SSL: "${EMAIL_USE_SSL:-false}"
+      EMAIL_USE_TLS: "${EMAIL_USE_TLS:-false}"
+      EMAIL_SSL_CERTFILE: "${EMAIL_SSL_CERTFILE:-}"
+      EMAIL_SSL_KEYFILE: "${EMAIL_SSL_KEYFILE:-}"
+
+      # =====================================================
+      # SUPERUSER INICIAL
+      # =====================================================
+      SKIP_SUPERUSER: "${SKIP_SUPERUSER:-false}"
+      SUPERUSER_NAME: "${SUPERUSER_NAME:-admin}"
+      SUPERUSER_EMAIL: "${SUPERUSER_EMAIL:-admin@example.com}"
+      SUPERUSER_PASSWORD: "${SUPERUSER_PASSWORD}"
+
+      SUPERUSER_API_TOKEN: "${SUPERUSER_API_TOKEN:-}"
+      SUPERUSER_API_KEY: "${SUPERUSER_API_KEY:-}"
+
+      # =====================================================
+      # GRANIAN
+      # =====================================================
+      GRANIAN_PORT: "${GRANIAN_PORT:-8080}"
+      GRANIAN_WORKERS: "${GRANIAN_WORKERS:-4}"
+
+      # =====================================================
+      # STARTUP
+      # =====================================================
+      DB_WAIT_TIMEOUT: "${DB_WAIT_TIMEOUT:-3}"
+      MAX_DB_WAIT_TIME: "${MAX_DB_WAIT_TIME:-60}"
+
+    ports:
+      - "${NETBOX_BIND_IP:-10.250.254.43}:${NETBOX_HOST_PORT:-18080}:${GRANIAN_PORT:-8080}"
+
+    healthcheck:
+      test: /opt/netbox/health.sh
+      start_period: ${NETBOX_HEALTH_START_PERIOD:-120s}
+      timeout: ${NETBOX_HEALTH_TIMEOUT:-5s}
+      interval: ${NETBOX_HEALTH_INTERVAL:-15s}
+      retries: ${NETBOX_HEALTH_RETRIES:-10}
+
+    volumes:
+      - netbox-media-files:/opt/netbox/netbox/media:rw
+      - netbox-reports-files:/opt/netbox/netbox/reports:rw
+      - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
+
+    networks:
+      - netbox-internal
+
+  netbox-worker:
+    <<: *netbox
+
+    depends_on:
+      netbox:
+        condition: service_healthy
+
+    # El worker NO debe publicar el puerto de NetBox.
+    ports: []
+
+    command:
+      - /opt/netbox/venv/bin/python
+      - /opt/netbox/netbox/manage.py
+      - rqworker
+
+    healthcheck:
+      test: ps -aux | grep -v grep | grep -q rqworker || exit 1
+      start_period: ${WORKER_HEALTH_START_PERIOD:-20s}
+      timeout: ${WORKER_HEALTH_TIMEOUT:-3s}
+      interval: ${WORKER_HEALTH_INTERVAL:-15s}
+      retries: ${WORKER_HEALTH_RETRIES:-5}
+
+  postgres:
+    image: docker.io/postgres:${POSTGRES_VERSION:-18-alpine}
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-netbox}"
+      POSTGRES_USER: "${POSTGRES_USER:-netbox}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+
+    healthcheck:
+      test: pg_isready -q -t 2 -d $$POSTGRES_DB -U $$POSTGRES_USER
+      start_period: ${POSTGRES_HEALTH_START_PERIOD:-20s}
+      timeout: ${POSTGRES_HEALTH_TIMEOUT:-30s}
+      interval: ${POSTGRES_HEALTH_INTERVAL:-10s}
+      retries: ${POSTGRES_HEALTH_RETRIES:-5}
+
+    # IMPORTANTE:
+    # No hay "ports".
+    # PostgreSQL solo está disponible dentro de netbox-internal.
+
+    volumes:
+      - netbox-postgres:/var/lib/postgresql
+
+    networks:
+      - netbox-internal
+
+  redis:
+    image: docker.io/valkey/valkey:${VALKEY_VERSION:-9.1-alpine}
+    restart: unless-stopped
+
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+
+    command:
+      - sh
+      - -c
+      - valkey-server --appendonly yes --requirepass $$REDIS_PASSWORD
+
+    healthcheck: &redis-healthcheck
+      test: '[ $$(valkey-cli --pass "$${REDIS_PASSWORD}" ping) = ''PONG'' ]'
+      start_period: ${REDIS_HEALTH_START_PERIOD:-5s}
+      timeout: ${REDIS_HEALTH_TIMEOUT:-3s}
+      interval: ${REDIS_HEALTH_INTERVAL:-1s}
+      retries: ${REDIS_HEALTH_RETRIES:-5}
+
+    # No se publica 6379 al host.
+
+    volumes:
+      - netbox-redis-data:/data
+
+    networks:
+      - netbox-internal
+
+  redis-cache:
+    image: docker.io/valkey/valkey:${VALKEY_VERSION:-9.1-alpine}
+    restart: unless-stopped
+
+    environment:
+      REDIS_PASSWORD: "${REDIS_CACHE_PASSWORD}"
+
+    command:
+      - sh
+      - -c
+      - valkey-server --requirepass $$REDIS_PASSWORD
+
+    healthcheck:
+      test: '[ $$(valkey-cli --pass "$${REDIS_PASSWORD}" ping) = ''PONG'' ]'
+      start_period: ${REDIS_HEALTH_START_PERIOD:-5s}
+      timeout: ${REDIS_HEALTH_TIMEOUT:-3s}
+      interval: ${REDIS_HEALTH_INTERVAL:-1s}
+      retries: ${REDIS_HEALTH_RETRIES:-5}
+
+    # Tampoco se publica 6379 al host.
+
+    volumes:
+      - netbox-redis-cache-data:/data
+
+    networks:
+      - netbox-internal
+
+
+networks:
+  netbox-internal:
+    driver: bridge
+
+
+volumes:
+  netbox-media-files:
+    driver: local
+
+  netbox-postgres:
+    driver: local
+
+  netbox-redis-cache-data:
+    driver: local
+
+  netbox-redis-data:
+    driver: local
+
+  netbox-reports-files:
+    driver: local
+
+  netbox-scripts-files:
+    driver: local
