@@ -11,6 +11,10 @@ Imagen oficial `netboxcommunity/netbox` + logos de Livinnet. No toca código, BD
 | Icono Apple/iOS | `netbox_touch-icon-180.png` |
 | Favicon de `/api/` | `rest-api.ico` |
 
+| Colores de toda la interfaz | `livinnet.css`, se agrega al final de `netbox.css` en el build |
+
+Paleta: azul marino `#16325A` y naranja `#EF8122` (muestreados del logo). Tema claro: primario azul marino, acento naranja. Tema oscuro: fondo azul marino, primario naranja. Para ajustar colores, editar solo `branding/livinnet.css`.
+
 Los SVG son un envoltorio del PNG (no vectoriales). Si se consigue el SVG original, reemplazarlos tal cual en `branding/`.
 
 ## Dokploy

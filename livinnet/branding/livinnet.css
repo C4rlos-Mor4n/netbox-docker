@@ -1,0 +1,148 @@
+/*
+ * Tema Livinnet para NetBox (se agrega al final de /static/netbox.css en el build).
+ * Solo sobrescribe variables y colores de marca; no toca layout ni comportamiento.
+ *
+ * Paleta (muestreada del logo):
+ *   azul marino  #16325A     naranja  #EF8122
+ * Contraste (WCAG): texto blanco sobre #16325A = 12.6:1 | texto #16325A sobre #EF8122 = 5.2:1
+ */
+
+:root {
+  --lv-navy: #16325a;
+  --lv-navy-deep: #0b1b33;
+  --lv-navy-mid: #11264a;
+  --lv-navy-soft: #1d3d6e;
+  --lv-orange: #ef8122;
+  --lv-orange-dark: #cf6a10;
+  --lv-orange-light: #f7a45b;
+}
+
+/* ---------- TEMA CLARO: primario = azul marino, acento = naranja ---------- */
+:root,
+[data-bs-theme='light'] {
+  --tblr-primary: #16325a;
+  --tblr-primary-rgb: 22, 50, 90;
+  --tblr-primary-fg: #ffffff;
+  --tblr-primary-darken: #0f2542;
+  --tblr-primary-lt: #e8edf5;
+  --tblr-primary-lt-rgb: 232, 237, 245;
+  --tblr-primary-bg-subtle: #d9e1ee;
+  --tblr-primary-border-subtle: #b3c2da;
+  --tblr-primary-text-emphasis: #0f2542;
+
+  --tblr-link-color: #16325a;
+  --tblr-link-color-rgb: 22, 50, 90;
+  --tblr-link-hover-color: #cf6a10;
+  --tblr-link-hover-color-rgb: 207, 106, 16;
+
+  --tblr-navbar-active-border-color: #ef8122;
+}
+
+/* Sidebar claro: antes degradado teal, ahora sutil azul marino */
+html[data-bs-theme='light'] .navbar-vertical.navbar-expand-lg {
+  background: linear-gradient(180deg, #16325a00, #16325a14), #ffffff;
+}
+
+/* El borde activo del menú está fijado en .navbar con teal: se reemplaza ahí */
+html .navbar,
+html .navbar-vertical {
+  --tblr-navbar-active-border-color: #ef8122;
+}
+
+/* Texto legible sobre el color primario (badges y fondos primarios) */
+.badge.bg-primary,
+.badge.text-bg-primary,
+.bg-primary,
+.text-bg-primary {
+  color: var(--tblr-primary-fg) !important;
+}
+
+/* Pestañas / paginación activas con el acento naranja */
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-item.show .nav-link {
+  border-bottom-color: #ef8122;
+}
+.page-item.active .page-link,
+.page-link.active {
+  background-color: var(--tblr-primary);
+  border-color: var(--tblr-primary);
+}
+.form-check-input:checked,
+.form-switch .form-check-input:checked {
+  background-color: var(--tblr-primary);
+  border-color: var(--tblr-primary);
+}
+.form-control:focus,
+.form-select:focus,
+.ts-wrapper.focus .ts-control {
+  border-color: #ef8122;
+  box-shadow: 0 0 0 0.25rem rgba(239, 129, 34, 0.25);
+}
+.btn:focus {
+  outline-color: #ef8122 !important;
+}
+
+/* ---------- TEMA OSCURO: fondo azul marino, primario = naranja ---------- */
+[data-bs-theme='dark'] {
+  --tblr-primary: #ef8122;
+  --tblr-primary-rgb: 239, 129, 34;
+  --tblr-primary-fg: #0b1b33;
+  --tblr-primary-darken: #d96f14;
+  --tblr-primary-lt: rgba(239, 129, 34, 0.14);
+  --tblr-primary-lt-rgb: 55, 50, 49;
+  --tblr-primary-bg-subtle: #3a2410;
+  --tblr-primary-border-subtle: #7a4413;
+  --tblr-primary-text-emphasis: #f7a45b;
+
+  --tblr-link-color: #f7a45b;
+  --tblr-link-color-rgb: 247, 164, 91;
+  --tblr-link-hover-color: #ffc08a;
+  --tblr-link-hover-color-rgb: 255, 192, 138;
+
+  --tblr-btn-active-color: #0b1b33;
+  --tblr-navbar-active-border-color: #ef8122;
+}
+
+html[data-bs-theme='dark'] {
+  background-color: #0b1b33;
+}
+html[data-bs-theme='dark'] .navbar,
+html[data-bs-theme='dark'] .page-header {
+  background-color: #0b1b33;
+}
+html[data-bs-theme='dark'] .navbar-vertical.navbar-expand-lg {
+  background: linear-gradient(180deg, #ef812200, #ef81220f), #0b1b33;
+}
+html[data-bs-theme='dark'] .page,
+html[data-bs-theme='dark'] .page-tabs .nav-tabs .nav-link.active {
+  background-color: #11264a !important;
+}
+html[data-bs-theme='dark'] .card {
+  background: #0b1b33 !important;
+}
+html[data-bs-theme='dark'] .btn-primary,
+html[data-bs-theme='dark'] .text-bg-primary {
+  color: #0b1b33 !important;
+}
+html[data-bs-theme='dark'] .nav-tabs .nav-link.active {
+  border-bottom-color: #ef8122;
+}
+html[data-bs-theme='dark'] .page-link.active,
+html[data-bs-theme='dark'] .active > .page-link {
+  color: #0b1b33;
+}
+/* Checkbox marcado en oscuro: la paloma (check) en azul marino sobre naranja */
+html[data-bs-theme='dark'] .form-check-input:checked[type='checkbox'] {
+  --tblr-form-check-bg-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' width='16' height='16'><path fill='none' stroke='%230b1b33' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8.5l2.5 2.5l5.5 -5.5'/></svg>");
+}
+html[data-bs-theme='dark'] ::selection {
+  background-color: rgba(239, 129, 34, 0.48);
+}
+
+/* Pie de página y barra de título: iconos con el color de marca */
+.footer .text-primary {
+  color: #16325a !important;
+}
+html[data-bs-theme='dark'] .footer .text-primary {
+  color: #ffffff !important;
+}
