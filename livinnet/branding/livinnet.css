@@ -146,3 +146,25 @@ html[data-bs-theme='dark'] ::selection {
 html[data-bs-theme='dark'] .footer .text-primary {
   color: #ffffff !important;
 }
+
+/* Login: botón de acción en naranja de marca (texto azul marino, contraste 5.2:1) */
+.page-center .btn-primary {
+  --tblr-btn-bg: #ef8122;
+  --tblr-btn-color: #16325a;
+  --tblr-btn-hover-bg: #cf6a10;
+  --tblr-btn-hover-color: #ffffff;
+  --tblr-btn-active-bg: #cf6a10;
+  --tblr-btn-active-color: #ffffff;
+  --tblr-btn-border-color: transparent;
+  color: #16325a !important;
+}
+.page-center .btn-primary:hover,
+.page-center .btn-primary:active {
+  color: #ffffff !important;
+}
+html[data-bs-theme='dark'] .page-center .btn-primary {
+  color: #0b1b33 !important;
+}
+html[data-bs-theme='dark'] .page-center .btn-primary:hover {
+  color: #ffffff !important;
+}
